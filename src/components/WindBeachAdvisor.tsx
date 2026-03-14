@@ -27,11 +27,11 @@ const getWindDirection = (deg: number): string => {
 };
 
 const getWindLabel = (speed: number): { label: string; color: string } => {
-  if (speed < 3) return { label: 'Calm', color: 'text-emerald-500' };
-  if (speed < 6) return { label: 'Light Breeze', color: 'text-emerald-500' };
-  if (speed < 10) return { label: 'Moderate', color: 'text-amber-500' };
+  if (speed < 3)  return { label: 'Calm',              color: 'text-emerald-500' };
+  if (speed < 6)  return { label: 'Light Breeze',      color: 'text-emerald-500' };
+  if (speed < 10) return { label: 'Moderate',          color: 'text-amber-500' };
   if (speed < 14) return { label: 'Strong - Meltemi!', color: 'text-orange-500' };
-  return { label: 'Very Strong', color: 'text-red-500' };
+  return             { label: 'Very Strong',            color: 'text-red-500' };
 };
 
 const getBeachRecommendations = (windSpeed: number, windDeg: number): BeachRecommendation[] => {
@@ -42,42 +42,28 @@ const getBeachRecommendations = (windSpeed: number, windDeg: number): BeachRecom
 
   return [
     {
-      name: 'Psili Ammos',
-      description: 'Sandy beach, shallow waters',
-      recommended: isSouth ? false : true,
-      reason: isSouth && isStrong
-        ? 'Exposed to south winds today'
-        : 'Protected from north winds — calm waters today!'
-    },
-    {
-      name: 'Bouros Beach',
-      description: 'Blue Flag, organized',
+      name: 'Megali Ammos',
+      description: 'Main sandy beach of Marmari',
       recommended: isNorth && isStrong ? false : true,
       reason: isNorth && isStrong
         ? 'Strong north winds — rough sea expected'
-        : 'Good conditions today!'
+        : 'Good conditions today — enjoy the main beach!'
     },
     {
-      name: 'Cavo Doro',
-      description: 'Famous windsurfing spot',
-      recommended: isStrong,
-      reason: isStrong
-        ? 'Perfect for windsurfing with strong winds today!'
-        : 'Light winds — better for swimming than windsurfing'
-    },
-    {
-      name: 'Agia Triada',
+      name: 'Giatron Beach',
       description: 'Quiet, scenic beach',
-      recommended: true,
-      reason: 'Naturally sheltered — good conditions almost always!'
+      recommended: isSouth ? false : true,
+      reason: isSouth && isStrong
+        ? 'Exposed to south winds today — avoid'
+        : 'Protected and calm — great choice today!'
     },
     {
-      name: 'Katakalou',
-      description: 'Pebbly, crystal clear',
+      name: 'Fygias Beach',
+      description: 'Secluded, crystal clear waters',
       recommended: !isStrong,
       reason: isStrong
         ? 'Waves expected due to strong winds'
-        : 'Calm and clear waters today!'
+        : 'Calm and clear waters today — highly recommended!'
     }
   ];
 };
@@ -92,26 +78,33 @@ export default function WindBeachAdvisor({ onNavigate }: WindBeachAdvisorProps) 
   const [error, setError] = useState('');
   const [lastUpdated, setLastUpdated] = useState('');
 
-  const API_KEY = 'ΒΑΛΕ_ΤΟ_OPENWEATHER_KEY_ΕΔΩ';
+  const API_KEY = import.meta.env.VITE_OPENWEATHER_KEY;
 
   const fetchWeather = async () => {
     setLoading(true);
     setError('');
+
+    if (!API_KEY) {
+      setError('Weather API key not configured.');
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch(
-        `https://api.openweathermap.org/data/2.5/weather?q=Karystos,GR&appid=${API_KEY}&units=metric`
+        `https://api.openweathermap.org/data/2.5/weather?q=Marmari,GR&appid=${API_KEY}&units=metric`
       );
       if (!response.ok) throw new Error('Weather fetch failed');
       const data = await response.json();
       setWeather({
         windSpeed: data.wind.speed,
-        windDeg: data.wind.deg,
+        windDeg: data.wind.deg ?? 0,
         temp: Math.round(data.main.temp),
         description: data.weather[0].description
       });
       const now = new Date();
       setLastUpdated(`${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`);
-    } catch {
+    } catch (_err) {
       setError('Could not fetch weather. Please try again.');
     } finally {
       setLoading(false);
@@ -129,12 +122,11 @@ export default function WindBeachAdvisor({ onNavigate }: WindBeachAdvisorProps) 
   return (
     <div className="flex h-screen w-full flex-col bg-sky-50 overflow-hidden max-w-[430px] mx-auto border-x border-sky-200 font-sans">
 
-      {/* Header */}
       <div className="bg-white border-b border-sky-100 px-4 py-4 sticky top-0 z-10">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-xl font-black text-blue-900">Wind & Beach Advisor</h1>
-            <p className="text-xs text-slate-400">Real-time conditions for Karystos</p>
+            <p className="text-xs text-slate-400">Real-time conditions for Marmari</p>
           </div>
           <button
             onClick={fetchWeather}
@@ -161,15 +153,14 @@ export default function WindBeachAdvisor({ onNavigate }: WindBeachAdvisorProps) 
 
         {weather && windInfo && (
           <>
-            {/* Weather Card */}
             <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-2xl p-5 text-white shadow-lg">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <div className="flex items-center gap-1 mb-1">
                     <MapPin size={12} className="text-blue-200" />
-                    <span className="text-xs text-blue-200 font-bold uppercase tracking-wider">Karystos, Euboea</span>
+                    <span className="text-xs text-blue-200 font-bold uppercase tracking-wider">Marmari, South Evia</span>
                   </div>
-                  <p className="text-4xl font-black">{weather.temp}C</p>
+                  <p className="text-4xl font-black">{weather.temp}&deg;C</p>
                   <p className="text-blue-200 text-sm capitalize mt-1">{weather.description}</p>
                 </div>
                 <Wind size={48} className="text-blue-300 opacity-80" />
@@ -183,13 +174,11 @@ export default function WindBeachAdvisor({ onNavigate }: WindBeachAdvisorProps) 
                 <div className="text-center">
                   <p className="text-[10px] uppercase font-bold text-blue-200 mb-1">Direction</p>
                   <p className="font-black text-lg">{windDir}</p>
-                  <p className="text-[10px] text-blue-200">{weather.windDeg}</p>
+                  <p className="text-[10px] text-blue-200">{weather.windDeg}&deg;</p>
                 </div>
                 <div className="text-center">
                   <p className="text-[10px] uppercase font-bold text-blue-200 mb-1">Status</p>
-                  <p className="font-black text-sm text-white">
-                    {windInfo.label}
-                  </p>
+                  <p className={`font-black text-sm ${windInfo.color}`}>{windInfo.label}</p>
                 </div>
               </div>
               {lastUpdated && (
@@ -197,25 +186,20 @@ export default function WindBeachAdvisor({ onNavigate }: WindBeachAdvisorProps) 
               )}
             </div>
 
-            {/* Meltemi Warning */}
             {weather.windSpeed >= 8 && (
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3">
                 <Wind size={20} className="text-amber-500 shrink-0 mt-0.5" />
                 <div>
                   <p className="font-bold text-amber-700 text-sm">Meltemi Winds Active!</p>
                   <p className="text-amber-600 text-xs mt-1">
-                    Strong north winds today. Avoid exposed northern beaches.
-                    Head south for calmer waters!
+                    Strong winds today. Check conditions before heading to the beach!
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Beach Recommendations */}
             <div>
-              <h2 className="text-lg font-black text-blue-900 mb-3">
-                Beach Recommendations Today
-              </h2>
+              <h2 className="text-lg font-black text-blue-900 mb-3">Beach Recommendations Today</h2>
               <div className="space-y-3">
                 {recommendations.map((beach) => (
                   <div
@@ -257,7 +241,6 @@ export default function WindBeachAdvisor({ onNavigate }: WindBeachAdvisorProps) 
               </div>
             </div>
 
-            {/* CTA */}
             <button
               onClick={() => onNavigate && onNavigate('beaches')}
               className="w-full py-4 bg-orange-500 hover:bg-orange-600 text-white font-black rounded-2xl transition-colors flex items-center justify-center gap-2"
